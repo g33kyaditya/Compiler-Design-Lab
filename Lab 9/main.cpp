@@ -15,7 +15,7 @@ Date : Mar 22, 2017
 #include <unordered_map>
 #include <iterator>
 #include <algorithm>
-#include <set>
+#include <stack>
 
 #include "defines.hpp"
 
@@ -51,7 +51,7 @@ int main() {
     for (auto p: lhs)
         First(p.first, p.second);   
 
-    //Prints First Entries
+    /*//Prints First Entries
     for (auto it = first.begin(); it != first.end(); it++) {
         cout << "First[" << it->first << "] = { ";
         auto v = it->second;
@@ -61,7 +61,7 @@ int main() {
         cout << "\n";
     }
 
-    cout << "\n\n";
+    cout << "\n\n";*/
 
     //Follow
     std::string startSymbol(1, productions[0][0]);
@@ -71,9 +71,9 @@ int main() {
     for (auto p: rhs) {
         Follow(p.first, p.second);
     }
-     
-    
-    //Prints Follow Entries
+
+
+    /*//Prints Follow Entries
     for (auto it = follow.begin(); it != follow.end(); it++) {
         cout << "Follow[" << it->first << "] = { ";
         auto v = it->second;
@@ -81,8 +81,8 @@ int main() {
             cout << "(" <<val.first << "," << val.second << "), ";
         cout << "} \n";
         cout << "\n";
-    }
-    
+    }*/
+
 
     // Creating table from first and follow sets
     for (auto nonTerminal: lhs) {
@@ -107,7 +107,7 @@ int main() {
         table[ss] = row;
     }
 
-    
+
     // Table
     cout << "The parse table is...\n\n";
     for (auto key: table) {
@@ -119,6 +119,68 @@ int main() {
             cout << "Table[" << nonTerminal << "][" << terminal << "] = " << productions[index] << "\n";
         }
     }
+    char ch = 'y';
+    do {
+        string str;
+        cout << "\n\nEnter the string which you want to parse: ";
+        cin >> str;
+        str.append("$");
+        stack<string> st;
+        st.push("$");
+        string ss(1, productions[0][0]);
+        st.push(ss);
+        int index = 0;
+        while (1) {
+            if (st.empty() || index >= str.length()) {
+                cout << "NOT ACCEPTED\n";
+                break;
+            }
+            string top = st.top();
+            string tapeSymbol(1, str[index]);
+            if (tapeSymbol == top && tapeSymbol != "$") {
+                index++;
+                st.pop();
+                continue;
+            }
 
-    
+            if (tapeSymbol == top && top == "$") {
+                cout << "ACCEPTED\n";
+                break;
+            }
+
+            if (table.find(top) == table.end()) {
+                cout << "NOT ACCEPTED\n";
+                break;
+            }
+
+            auto map = table.at(top);
+            if (map.find(tapeSymbol) == map.end()) {
+                cout << "NOT ACCEPTED\n";
+                break;
+            }
+
+            string prod = productions[map[tapeSymbol]];
+            prod = prod.substr(3);
+            if (!st.empty()) {
+                st.pop();
+                if (prod == "e")
+                    st.pop();
+                else {
+                    for (int i = prod.length()-1; i >= 0; i--) {
+                        string toPush(1, prod[i]);
+                        st.push(toPush);
+                    }
+                }
+                continue;
+            }
+            else {
+                cout << "NOT ACCEPTED\n";
+                break;
+            }
+        }
+        cout << "Do you want to parse more strings ? (y/n): ";
+        cin >> ch;
+    }while (ch == 'y' || ch == 'Y');
+    return 0;
+
 }
