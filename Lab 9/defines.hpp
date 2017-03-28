@@ -200,13 +200,13 @@ void Follow(string s, int index) {
                     while (isEpsilon) {
                         remove(currentV, "e");
                         z++;
-                        
+
                         if (z >= production.length()) {
                             auto newVec = follow[production.substr(0,1)];
                             for (auto val: newVec) {
                                 currentV.push_back(val);
                             }
-                            follow[s] = currentV;        
+                            follow[s] = currentV;
                             break;
                         }
                         else {
