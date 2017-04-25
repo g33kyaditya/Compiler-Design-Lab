@@ -9,6 +9,7 @@ Reference: http://www.bytelabs.org/pub/ct/slides/rb@uoe/comp06.pdf
 */
 
 #include <iostream>
+#include <algorithm>
 #include <string>
 #include <unordered_map>
 #include <stack>
@@ -19,6 +20,7 @@ using namespace std;
 unordered_map<string, unordered_map<string, string> > table;
 unordered_map<string, set<string> > first;
 unordered_map<string, set<string> > last;
+vector<string> operators;
 
 void fillOperatorPrecedenceTableStatically() {
     unordered_map<string, string> row_0;
@@ -60,19 +62,23 @@ bool isNonTerminal(char ch) {
 
 void addToFirst(string symbol) {
     for (auto st: first[symbol]) {
-        addToFirst(st);
-        auto cur = first[st];
-        for (auto unit: cur)
+        if (isNonTerminal(st[0])) {
+            addToFirst(st);
+            auto cur = first[st];
+            for (auto unit: cur)
             first[symbol].insert(unit);
+        }
     }
 }
 
 void addToLast(string symbol) {
     for (auto st: last[symbol]) {
-        addToFirst(st);
-        auto cur = last[st];
-        for (auto unit: cur)
+        if (isNonTerminal(st[0])) {
+            addToLast(st);
+            auto cur = last[st];
+            for (auto unit: cur)
             last[symbol].insert(unit);
+        }
     }
 }
 
@@ -192,7 +198,7 @@ void createPrecedenceTable(vector<string>& productions) {
             if (isNonTerminal(production[i]) && !isNonTerminal(production[i+1])) {
                 set<string> lastList = last[toString(production[i])];
                 for (string elem: lastList)
-                    table[toString(production[i+1])][elem] = ">";
+                    table[elem][toString(production[i+1])] = ">";
             }
         }
     }
@@ -207,7 +213,7 @@ void createPrecedenceTable(vector<string>& productions) {
         }
     }
 
-    // Adding $ < a for all a in first and a > $ 
+    // Adding $ < a for all a in first and a > $
     for (auto unit: first) {
         for (string val: unit.second) {
             table["$"][val] = "<";
@@ -217,6 +223,22 @@ void createPrecedenceTable(vector<string>& productions) {
     for (auto unit: last) {
         for (string val: unit.second) {
             table[val]["$"] = ">";
+        }
+    }
+
+    // Adding productions of ids
+    vector<string> ids;
+    for (string production: productions) {
+        if (production.length() == 4 && !isNonTerminal(production[3])) {
+            string id = toString(production[3]);
+            ids.push_back(id);
+        }
+    }
+
+    for (auto id: ids) {
+        for (auto op: operators) {
+            if (std::find(ids.begin(), ids.end(), op) == ids.end())
+                table[id][op] = ">";
         }
     }
 }
@@ -269,13 +291,18 @@ int main() {
         if (str == "X")
             break;
         productions.push_back(str);
+        for (int i = 3; i < str.length(); i++) {
+            if (!isNonTerminal(str[i])) {
+                operators.push_back(toString(str[i]));
+            }
+        }
     }
     createFirstAndLastTable(productions);
     createPrecedenceTable(productions);
 
-    /*
+
     // Print FirstOp+ and LastOp+ Lists//
-    cout << "\n\n"; 
+    cout << "\n\n";
     for (auto str: first) {
         auto s = str.second;
         cout << str.first << " : ";
@@ -284,7 +311,7 @@ int main() {
         cout << "\n";
     }
 
-    cout << "\n\n"; 
+    cout << "\n\n";
     for (auto str: last) {
         auto s = str.second;
         cout << str.first << " : ";
@@ -293,7 +320,6 @@ int main() {
         cout << "\n";
     }
     //////////
-    */
 
     // Print Precedence Table //
 
